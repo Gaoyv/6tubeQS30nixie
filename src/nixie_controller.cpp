@@ -181,6 +181,34 @@ void NixieController::runAntiPoison() {
   }
 }
 
+void NixieController::displayNumber(int digit, int tubePosition) {
+  data[tubePosition] = 0;
+
+  if (digit < 8) {
+    data[4] &= ~((1 << ((3 - tubePosition) * 2)) | (1 << ((3 - tubePosition) * 2 + 1)));
+    data[tubePosition] |= (1 << (7 - digit));
+  } else if (digit == 8) {
+    data[4] &= ~((1 << ((3 - tubePosition) * 2)) | (1 << ((3 - tubePosition) * 2 + 1)));
+    data[4] |= (1 << ((3 - tubePosition) * 2 + 1));
+  } else if (digit == 9) {
+    data[4] &= ~((1 << ((3 - tubePosition) * 2)) | (1 << ((3 - tubePosition) * 2 + 1)));
+    data[4] |= (1 << ((3 - tubePosition) * 2));
+  }
+}
+
+// 更新移位寄存器（基于用户提供的驱动代码）
+void NixieController::updateShiftRegisters() {
+  digitalWrite(STCP, LOW);
+  for (int i = 4; i >= 0; i--) {
+    for (int j = 0; j < 8; j++) {
+      digitalWrite(SHCP, LOW);
+      digitalWrite(DS, (data[i] & (1 << j)) ? HIGH : LOW);
+      digitalWrite(SHCP, HIGH);
+    }
+  }
+  digitalWrite(STCP, HIGH);
+}
+
 void NixieController::checkAntiPoison() {
   Config& config = configManager.getConfig();
   
@@ -197,27 +225,7 @@ void NixieController::checkAntiPoison() {
   }
 }
 
-void NixieController::displayNumber(int digit, int tubePosition) {
-    data[tubePosition] = 0;
-    if (digit < 8) {
-        data[4] &= ~((1 << ((3 - tubePosition) * 2)) | (1 << ((3 - tubePosition) * 2 + 1)));
-        data[tubePosition] |= (1 << (7 - digit));
-    } else if (digit == 8) {
-        data[4] |= (1 << ((3 - tubePosition) * 2));
-        data[4] &= ~(1 << ((3 - tubePosition) * 2 + 1));
-    } else if (digit == 9) {
-        data[4] &= ~(1 << ((3 - tubePosition) * 2));
-        data[4] |= (1 << ((3 - tubePosition) * 2 + 1));
-    }
-}
 
-void NixieController::updateShiftRegisters() {
-    digitalWrite(STCP, LOW);
-    for (int i = 0; i < 5; i++) {
-        shiftOut(DS, SHCP, MSBFIRST, data[i]);
-    }
-    digitalWrite(STCP, HIGH);
-}
 
 void NixieController::setDot(bool on) {
   digitalWrite(COLON_PIN, on ? HIGH : LOW);
