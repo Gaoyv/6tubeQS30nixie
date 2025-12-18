@@ -38,7 +38,7 @@ public:
 
 private:
   bool manualMode;
-  int manualDigits[6];
+  int manualDigits[4];
 
   // 测试模式相关
   bool testMode;
@@ -50,15 +50,18 @@ private:
   unsigned long lastAntiPoisonTime;
   unsigned long antiPoisonStartTime;
   int currentAntiPoisonDigit;
-  int antiPoisonDigits[6];
+  int antiPoisonDigits[4];
   
+  // 驱动数据
+  uint8_t data[5];
+
   // 时间控制
   unsigned long timeDispDelay;
   unsigned long timeBrightnessDelay;
   
   // 内部方法
-  void setNumber(int num, int pos);
-  void updateNumbers();
+  void displayNumber(int digit, int tubePosition);
+  void updateShiftRegisters();
   void setDot(bool on);
 };
 

@@ -150,7 +150,7 @@ String WebServerManager::generateHTML() {
     
     .digit-input {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
       margin: 16px 0;
     }
@@ -396,14 +396,12 @@ String WebServerManager::generateHTML() {
       </div>
     </div>
     <div class="card">
-      <h2>手动输入数字 (时:分:秒)</h2>
+      <h2>手动输入数字 (时:分)</h2>
       <div class="digit-input">
         <input type="number" id="digit1" min="0" max="9" placeholder="时十位">
         <input type="number" id="digit2" min="0" max="9" placeholder="时个位">
         <input type="number" id="digit3" min="0" max="9" placeholder="分十位">
         <input type="number" id="digit4" min="0" max="9" placeholder="分个位">
-        <input type="number" id="digit5" min="0" max="9" placeholder="秒十位">
-        <input type="number" id="digit6" min="0" max="9" placeholder="秒个位">
       </div>
       <button class="btn btn-effect" onclick="setManualDigits()">显示输入数字</button>
       <button class="btn btn-effect" onclick="setAutoMode()">恢复自动时钟</button>
@@ -494,12 +492,10 @@ function updateBlinkInterval(value) {
         document.getElementById('digit1').value,
         document.getElementById('digit2').value,
         document.getElementById('digit3').value,
-        document.getElementById('digit4').value,
-        document.getElementById('digit5').value,
-        document.getElementById('digit6').value
+        document.getElementById('digit4').value
       ];
       
-      fetch('/manual?d1=' + digits[0] + '&d2=' + digits[1] + '&d3=' + digits[2] + '&d4=' + digits[3] + '&d5=' + digits[4] + '&d6=' + digits[5])
+      fetch('/manual?d1=' + digits[0] + '&d2=' + digits[1] + '&d3=' + digits[2] + '&d4=' + digits[3])
         .catch(err => console.error('Error:', err));
     }
     

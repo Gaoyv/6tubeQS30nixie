@@ -6,8 +6,6 @@
 extern Coloneffect coloneffect;
 extern bool isblink;
 
-// 创建74HC595移位寄存器对象，10个寄存器
-ShiftRegister74HC595<9> sr(DS, SHCP, STCP);
 NixieController nixieController;
 
 NixieController::NixieController() 
@@ -15,9 +13,12 @@ NixieController::NixieController()
     antiPoisonRunning(false), lastAntiPoisonTime(0), antiPoisonStartTime(0), 
     currentAntiPoisonDigit(0), timeDispDelay(0), timeBrightnessDelay(0) {
   
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 4; i++) {
     manualDigits[i] = -1;
     antiPoisonDigits[i] = 0;
+  }
+  for (int i = 0; i < 5; i++) {
+    data[i] = 0;
   }
 }
 
@@ -27,9 +28,9 @@ void NixieController::begin() {
   pinMode(STCP, OUTPUT);
   pinMode(PWM_PIN, OUTPUT);
   pinMode(BOOST_ENABLE_PIN, OUTPUT);
-  //pinMode(BLINK, OUTPUT);
+  pinMode(COLON_PIN, OUTPUT);
   
-  //digitalWrite(BLINK, LOW);
+  digitalWrite(COLON_PIN, LOW);
   analogWriteFreq(20000);
   
   clearDisplay();
@@ -44,7 +45,6 @@ void NixieController::displayTime() {
     tmElements_t now = timeManager.getCurrentTime();
     int hours = now.Hour;
     int minutes = now.Minute;
-    int seconds = now.Second;
     
     Config& config = configManager.getConfig();
     
@@ -59,15 +59,12 @@ void NixieController::displayTime() {
       // hours == 12 时保持12（中午12点）
     }
 
-    clearDisplay();
-    setNumber(hours / 10, 1);     // 时十位
-    setNumber(hours % 10, 2);     // 时个位
-    setNumber(minutes / 10, 3);   // 分十位
-    setNumber(minutes % 10, 4);   // 分个位
-    setNumber(seconds / 10, 5);   // 秒十位
-    setNumber(seconds % 10, 6);   // 秒个位
+    displayNumber(hours / 10, 0);
+    displayNumber(hours % 10, 1);
+    displayNumber(minutes / 10, 2);
+    displayNumber(minutes % 10, 3);
 
-    updateNumbers();
+    updateShiftRegisters();
   }
 }
 
@@ -77,12 +74,12 @@ void NixieController::displayManualDigits() {
     lastUpdate = millis();
     
     clearDisplay();
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 4; i++) {
       if (manualDigits[i] >= 0 && manualDigits[i] <= 9) {
-        setNumber(manualDigits[i], i + 1); // 位置从1开始
+        displayNumber(manualDigits[i], i);
       }
     }
-    updateNumbers();
+    updateShiftRegisters();
   }
 }
 
@@ -127,26 +124,28 @@ void NixieController::handleBlink() {
         setDot(isblink);
         break;
     }
-    updateNumbers();
     lastBlink = millis();
   }
 }
 
 void NixieController::clearDisplay() {
-  sr.setAllLow();
+  for (int i = 0; i < 5; i++) {
+    data[i] = 0;
+  }
+  updateShiftRegisters();
 }
 
 void NixieController::setManualMode(bool enabled) {
   manualMode = enabled;
   if (!enabled) {
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 4; i++) {
       manualDigits[i] = -1;
     }
   }
 }
 
 void NixieController::setManualDigit(int position, int digit) {
-  if (position >= 0 && position < 6) {
+  if (position >= 0 && position < 4) {
     if (digit >= 0 && digit <= 9) {
       manualDigits[position] = digit;
     } else {
@@ -164,21 +163,21 @@ void NixieController::runAntiPoison() {
     AntiPoisonMode mode = static_cast<AntiPoisonMode>(config.antiPoisonMode);
     
     if (mode == MODE_SEQUENTIAL) {
-      for (int i = 0; i < 6; i++) {
+      for (int i = 0; i < 4; i++) {
         antiPoisonDigits[i] = (currentAntiPoisonDigit + i) % 10;
       }
       currentAntiPoisonDigit = (currentAntiPoisonDigit + 1) % 10;
     } else { // MODE_RANDOM
-      for (int i = 0; i < 6; i++) {
+      for (int i = 0; i < 4; i++) {
         antiPoisonDigits[i] = random(0, 10);
       }
     }
     
     clearDisplay();
-    for (int i = 0; i < 6; i++) {
-      setNumber(antiPoisonDigits[i], i + 1);
+    for (int i = 0; i < 4; i++) {
+      displayNumber(antiPoisonDigits[i], i);
     }
-    updateNumbers();
+    updateShiftRegisters();
   }
 }
 
@@ -198,105 +197,54 @@ void NixieController::checkAntiPoison() {
   }
 }
 
-void NixieController::setNumber(int num, int pos) {
-  switch (pos) {
-    case 1:
-      sr.setNoUpdate(num + 48, HIGH);
-      break;
-    case 2:
-      sr.setNoUpdate(num + 58, HIGH);
-      break;
-    case 3:
-      sr.setNoUpdate(num + 24, HIGH);
-      break;
-    case 4:
-      sr.setNoUpdate(num + 34, HIGH);
-      break;
-    case 5:
-      sr.setNoUpdate(num, HIGH);
-      break;
-    case 6:
-      sr.setNoUpdate(num + 10, HIGH);
-      break;
-    default:
-      break;
-  }
+void NixieController::displayNumber(int digit, int tubePosition) {
+    data[tubePosition] = 0;
+    if (digit < 8) {
+        data[4] &= ~((1 << ((3 - tubePosition) * 2)) | (1 << ((3 - tubePosition) * 2 + 1)));
+        data[tubePosition] |= (1 << (7 - digit));
+    } else if (digit == 8) {
+        data[4] |= (1 << ((3 - tubePosition) * 2));
+        data[4] &= ~(1 << ((3 - tubePosition) * 2 + 1));
+    } else if (digit == 9) {
+        data[4] &= ~(1 << ((3 - tubePosition) * 2));
+        data[4] |= (1 << ((3 - tubePosition) * 2 + 1));
+    }
 }
 
-void NixieController::updateNumbers() {
-  sr.updateRegisters();
+void NixieController::updateShiftRegisters() {
+    digitalWrite(STCP, LOW);
+    for (int i = 0; i < 5; i++) {
+        shiftOut(DS, SHCP, MSBFIRST, data[i]);
+    }
+    digitalWrite(STCP, HIGH);
 }
 
 void NixieController::setDot(bool on) {
-  sr.setNoUpdate(70, on ? HIGH : LOW);
-  sr.setNoUpdate(71, on ? HIGH : LOW);
-  sr.setNoUpdate(46, on ? HIGH : LOW);
-  sr.setNoUpdate(47, on ? HIGH : LOW);
+  digitalWrite(COLON_PIN, on ? HIGH : LOW);
 }
 
 void NixieController::displayIPAddress(IPAddress ip) {
   clearDisplay();
-  
-  // 在前三个辉光管上同时显示IP地址的前三段
-  // 位置1: 第一段的个位
-  // 位置2: 第二段的个位  
-  // 位置3: 第三段的个位
-  
-  int octet1 = ip[0];  // 第一段 (如192)
-  int octet2 = ip[1];  // 第二段 (如168)
-  int octet3 = ip[2];  // 第三段 (如1)
-  
-  // 显示第一段的个位（位置1）
-  setNumber(octet1 % 10, 1);
-  
-  // 显示第二段的个位（位置2）
-  setNumber(octet2 % 10, 2);
-  
-  // 显示第三段的个位（位置3）
-  setNumber(octet3 % 10, 3);
-  
-  updateNumbers();
+  int octet = ip[3];
+  displayNumber(octet / 100, 1);
+  displayNumber((octet / 10) % 10, 2);
+  displayNumber(octet % 10, 3);
+  updateShiftRegisters();
 }
 
 void NixieController::displayIPAddressOctet(int octet, int startPosition) {
   clearDisplay();
-  
-  // 在前三个辉光管上显示一个IP地址段（0-255）
-  // startPosition参数表示从哪个位置开始显示（1-3）
-  
   if (octet >= 100) {
-    // 三位数，显示百位、十位、个位（如果空间允许）
-    // 根据startPosition决定显示位置
-    if (startPosition == 1) {
-      // 从位置1开始，显示百位、十位、个位
-      setNumber(octet / 100, 1);           // 百位
-      setNumber((octet / 10) % 10, 2);     // 十位
-      setNumber(octet % 10, 3);            // 个位
-    } else if (startPosition == 2) {
-      // 从位置2开始，只能显示十位和个位
-      setNumber((octet / 10) % 10, 2);     // 十位
-      setNumber(octet % 10, 3);            // 个位
-    } else {
-      // 从位置3开始，只能显示个位
-      setNumber(octet % 10, 3);            // 个位
-    }
+      displayNumber(octet / 100, 1);
+      displayNumber((octet / 10) % 10, 2);
+      displayNumber(octet % 10, 3);
   } else if (octet >= 10) {
-    // 两位数，显示十位和个位
-    if (startPosition <= 2) {
-      setNumber(octet / 10, startPosition);      // 十位
-      setNumber(octet % 10, startPosition + 1);  // 个位
-    } else {
-      // 从位置3开始，只能显示个位
-      setNumber(octet % 10, 3);
-    }
+      displayNumber(octet / 10, 2);
+      displayNumber(octet % 10, 3);
   } else {
-    // 一位数，只显示个位
-    if (startPosition <= 3) {
-      setNumber(octet, startPosition);
-    }
+      displayNumber(octet, 3);
   }
-  
-  updateNumbers();
+  updateShiftRegisters();
 }
 
 void NixieController::setTestMode(bool enabled) {
@@ -306,10 +254,10 @@ void NixieController::setTestMode(bool enabled) {
     lastTestUpdate = millis();
     // 立即显示第一个数字
     clearDisplay();
-    for(int i=0; i<6; i++) {
-      setNumber(currentTestDigit, i+1);
+    for(int i=0; i<4; i++) {
+      displayNumber(currentTestDigit, i);
     }
-    updateNumbers();
+    updateShiftRegisters();
   }
 }
 
@@ -326,9 +274,9 @@ void NixieController::runTestSequence() {
     }
     
     clearDisplay();
-    for(int i=0; i<6; i++) {
-      setNumber(currentTestDigit, i+1);
+    for(int i=0; i<4; i++) {
+      displayNumber(currentTestDigit, i);
     }
-    updateNumbers();
+    updateShiftRegisters();
   }
 }

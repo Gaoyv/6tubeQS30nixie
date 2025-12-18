@@ -186,7 +186,7 @@ void WebServerManager::handleManual() {
     nixieController.setManualMode(false);
   } else {
     nixieController.setManualMode(true);
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 4; i++) {
       String argName = "d" + String(i+1);
       if (server.hasArg(argName)) {
         int digit = server.arg(argName).toInt();

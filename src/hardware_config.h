@@ -2,19 +2,19 @@
 #define HARDWARE_CONFIG_H
 
 // 硬件引脚定义
-#define SHCP 13          // 移位寄存器时钟引脚
+#define SHCP 12          // 移位寄存器时钟引脚
 #define DS 14            // 串行数据输入
-#define STCP 12          // 存储寄存器时钟引脚
+#define STCP 13          // 存储寄存器时钟引脚
 #define PWM_PIN 2        // 辉光管亮度控制PWM引脚
 #define BOOST_ENABLE_PIN 15 // 升压电路使能引脚
-//#define BLINK 16         // 时分冒号控制引脚
+#define COLON_PIN 16     // 时分冒号控制引脚
 #define SDA 4            // I2C SDA
 #define SCL 5            // I2C SCL
-#define LED_PIN 0        // WS2812数据引脚
-#define SENSOR 16         // 人体传感器输入(高电平触发)
+#define LED_PIN 1        // WS2812数据引脚
+#define SENSOR 3         // 人体传感器输入(高电平触发)
 
 // LED配置
-#define LED_COUNT 6       // 6个辉光管对应6个WS2812灯
+#define LED_COUNT 4       // 4个辉光管对应4个WS2812灯
 #define BRIGHTNESS 150    // 初始亮度
 
 // 时间常量
