@@ -143,6 +143,14 @@ void WebServerManager::handleSet() {
     configManager.markForSave();
   }
 
+  if (server.hasArg("blinkInterval")) {
+    int interval = server.arg("blinkInterval").toInt();
+    if (interval == 500 || interval == 1000) {
+      config.blinkInterval = interval;
+      configManager.markForSave();
+    }
+  }
+
   if (server.hasArg("is24HourFormat")) {
     config.is24HourFormat = server.arg("is24HourFormat") == "1";
     configManager.markForSave();
@@ -153,14 +161,6 @@ void WebServerManager::handleSet() {
     // 验证时区偏移范围 (-12到+14小时)
     if (offset >= -43200 && offset <= 50400) {
       config.timezoneOffset = offset;
-      configManager.markForSave();
-    }
-  }
-
-  if (server.hasArg("ntpServer")) {
-    String serverAddr = server.arg("ntpServer");
-    if (serverAddr.length() < 64) {
-      strcpy(config.ntpServer, serverAddr.c_str());
       configManager.markForSave();
     }
   }

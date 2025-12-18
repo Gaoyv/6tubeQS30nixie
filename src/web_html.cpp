@@ -288,6 +288,18 @@ String WebServerManager::generateHTML() {
       <button class="btn btn-effect)=====";
   html += (config.coloneffect == COLON_BLINK) ? " selected" : "";
   html += R"=====(" onclick="setColonMode(2)">冒号闪烁</button>
+      
+      <div class="slider-container" style="margin-top: 12px;">
+        <label>闪烁间隔:</label>
+        <select id="blinkInterval" onchange="updateBlinkInterval(this.value)" style="width: 100%; padding: 8px; margin-top: 4px; border-radius: 4px; border: none;">
+          <option value="500" )=====";
+  html += (config.blinkInterval == 500) ? "selected" : "";
+  html += R"=====(>1秒 (亮0.5秒/灭0.5秒)</option>
+          <option value="1000" )=====";
+  html += (config.blinkInterval == 1000) ? "selected" : "";
+  html += R"=====(>2秒 (亮1秒/灭1秒)</option>
+        </select>
+      </div>
     </div>
 
 
@@ -324,15 +336,6 @@ String WebServerManager::generateHTML() {
 
     <div class="card">
       <h2>网络对时</h2>
-      <div class="slider-container">
-        <div class="slider-label">
-          <span>NTP服务器地址</span>
-        </div>
-        <input type="text" id="ntpServer" value=")=====";
-  html += String(config.ntpServer);
-  html += R"=====(" style="width: 100%; padding: 8px; margin-bottom: 8px; border-radius: 4px; border: none;">
-        <button class="btn" onclick="saveNtpServer()">保存服务器地址</button>
-      </div>
       <button id="syncBtn" class="btn" onclick="syncTime()">立即对时</button>
       <p id="syncStatus" style="margin-top: 8px; text-align: center;"></p>
     </div>
@@ -442,6 +445,11 @@ function setColonMode(mode) {
     event.target.classList.add('selected');
     
     fetch('/set?coloneffect=' + mode)
+        .catch(err => console.error('Error:', err));
+}
+
+function updateBlinkInterval(value) {
+    fetch('/set?blinkInterval=' + value)
         .catch(err => console.error('Error:', err));
 }
 
@@ -653,19 +661,6 @@ html += R"=====();
     function updateAntiPoisonMode() {
       const mode = document.getElementById('antiPoisonMode').value;
       fetch('/set?antiPoisonMode=' + mode)
-        .catch(err => console.error('Error:', err));
-    }
-
-    function saveNtpServer() {
-      const server = document.getElementById('ntpServer').value;
-      fetch('/set?ntpServer=' + encodeURIComponent(server))
-        .then(response => {
-          if (response.ok) {
-            alert('NTP服务器地址已保存');
-          } else {
-            alert('保存失败');
-          }
-        })
         .catch(err => console.error('Error:', err));
     }
 

@@ -43,9 +43,9 @@ struct Config {
   uint8_t antiPoisonMode;
   uint8_t antiPoisonInterval;
   int coloneffect;
-  char ntpServer[64];
   uint16_t nixieAutoMinLDR;      // 自动亮度下限阈值 (对应最亮)
   uint16_t nixieAutoMaxLDR;      // 自动亮度上限阈值 (对应最暗)
+  uint16_t blinkInterval;        // 冒号闪烁间隔 (毫秒)
 };
 
 class ConfigManager {

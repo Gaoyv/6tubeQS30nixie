@@ -30,6 +30,12 @@ void ConfigManager::loadConfig() {
       config.coloneffect > 2) {
     configValid = false;
   }
+
+  // 单独检查 blinkInterval，如果无效则重置为默认值，不影响整体配置有效性
+  if (config.blinkInterval != 500 && config.blinkInterval != 1000) {
+    config.blinkInterval = 500; // 默认为 500ms (1秒周期)
+    shouldSaveConfig = true;    // 标记需要保存
+  }
   
   // 如果读取的配置无效，使用默认值
   if (!configValid) {
@@ -61,9 +67,9 @@ void ConfigManager::setDefaultConfig() {
   config.antiPoisonMode = MODE_SEQUENTIAL;
   config.antiPoisonInterval = 5;
   config.coloneffect = COLON_BLINK;
-  strcpy(config.ntpServer, "cn.pool.ntp.org");
   config.nixieAutoMinLDR = 0;
-  config.nixieAutoMaxLDR = 10;
+  config.nixieAutoMaxLDR = 100;
+  config.blinkInterval = 500;
 }
 
 void ConfigManager::saveConfig() {

@@ -54,7 +54,7 @@ RX8025T::RX8025T()
 void RX8025T::init(void)
 {
   uint8_t statusReg, mask;
-
+  Wire.setClock(25000L);
   i2cBegin();  
     
   statusReg = readRTC(RX8025T_RTC_STATUS);

@@ -112,7 +112,9 @@ void NixieController::setBrightness() {
 
 void NixieController::handleBlink() {
   static unsigned long lastBlink = 0;
-  if (millis() - lastBlink > 1000) {
+  Config& config = configManager.getConfig();
+  
+  if (millis() - lastBlink > config.blinkInterval) {
     switch (coloneffect) {
       case COLON_DISABLE:
         setDot(false);

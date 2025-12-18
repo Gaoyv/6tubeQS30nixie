@@ -31,7 +31,7 @@ void TimeManager::checkWifiConnection() {
 bool TimeManager::syncFromNTP() {
   Config& config = configManager.getConfig();
   
-  timeClient.setPoolServerName(config.ntpServer);
+  timeClient.setPoolServerName("cn.pool.ntp.org");
   timeClient.begin();
   
   if (!timeClient.forceUpdate()) {
