@@ -31,7 +31,7 @@ void NixieController::begin() {
   pinMode(COLON_PIN, OUTPUT);
   
   digitalWrite(COLON_PIN, LOW);
-  analogWriteFreq(20000);
+  analogWriteFreq(100000);
   
   clearDisplay();
   delay(1000); // 等待辉光管预热
